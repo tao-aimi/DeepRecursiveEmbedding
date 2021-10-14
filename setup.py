@@ -25,6 +25,7 @@ configuration = {
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: CPython',
+        "License :: OSI Approved :: MIT License",
     ],
     'keywords' : 'Dimensionality Reduction t-SNE UMAP Representation Learning',
     'url' : 'https://github.com/zuxinrui/DRE',
