@@ -146,8 +146,8 @@ class DeepRecursiveEmbedding:
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=1500)
 
     def calculate_p_matrix(self, step):
-    	if self.data == 0:
-    		raise TypeError('[DRE] Input the data first.')
+        if self.data == 0:
+            raise TypeError('[DRE] Input the data first.')
         ran_num = np.random.randint(2 ** 16 - 1)
         np.random.seed(ran_num)
         np.random.shuffle(self.data)
@@ -517,7 +517,7 @@ class DeepRecursiveEmbedding:
         self.plot(epoch, recursive_step)
 
     def fit_transform(self, x):
-    	start_time = time.time()
+        start_time = time.time()
         self.data = x
         self.num_batch = ceil(self.data.shape[0] / self.batch_size)
         self._fit_embedding()
