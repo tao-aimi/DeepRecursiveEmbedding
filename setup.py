@@ -1,4 +1,5 @@
 from setuptools import setup
+from numpy.distutils.core import Extension
 
 def readme():
     with open('readme.md') as readme_file:
@@ -35,7 +36,8 @@ configuration = {
     'packages' : ['dre'],
     'install_requires' : ['scikit-learn >= 0.16',
                           'numba >= 0.34',
-                          'torch >= 1.0']
+                          'torch >= 1.0'],
+    'ext_modules' : [Extension("_utils_3900x", ["_utils_3900x.cpp"], include_dirs=[numpy.get_include()], libraries=['m'], extra_compile_args=["-O3", "-march=znver2"]),],
     }
 
 setup(**configuration)
