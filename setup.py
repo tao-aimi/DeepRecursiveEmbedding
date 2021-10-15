@@ -1,9 +1,15 @@
+import os
+import numpy
 from setuptools import setup
 from numpy.distutils.core import Extension
+from Cython.Build import cythonize
+
 
 def readme():
     with open('readme.md') as readme_file:
         return readme_file.read()
+
+os.environ["CC"] = "clang"
 
 configuration = {
     'name' : 'Deep Recursive Embedding',
@@ -36,8 +42,10 @@ configuration = {
     'packages' : ['dre'],
     'install_requires' : ['scikit-learn >= 0.16',
                           'numba >= 0.34',
-                          'torch >= 1.0'],
-    'ext_modules' : [Extension("_utils_3900x", ["_utils_3900x.cpp"], include_dirs=[numpy.get_include()], libraries=['m'], extra_compile_args=["-O3", "-march=znver2"]),],
+                          'torch >= 1.0',
+                          'cython >= 0.10'],
+    'ext_modules' : cythonize('dre/_utils.pyx'),
+    'include_dirs' : [numpy.get_include()],
     }
 
 setup(**configuration)

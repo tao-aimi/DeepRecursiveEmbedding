@@ -17,8 +17,8 @@ from math import ceil
 import matplotlib.pyplot as plt
 import matplotlib
 
-from _models import *
-from _utils_dre import *
+from ._models import *
+from ._utils_dre import *
 
 
 # os.environ['MKL_DEBUG_CPU_TYPE'] = '5'  # 3900x
