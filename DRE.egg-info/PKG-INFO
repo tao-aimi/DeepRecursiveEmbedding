@@ -1,0 +1,29 @@
+Metadata-Version: 1.1
+Name: DRE
+Version: 1.0.0
+Summary: Deep Recursive Embedding for High-Dimensional Data
+Home-page: https://github.com/zuxinrui/DRE
+Author: Xinrui Zu
+Author-email: zuxinrui95@gmail.com
+License: LICENSE
+Description: # Deep Recursive Embedding
+        
+        Deep Recursive Embedding (DRE) is a novel demensionality reduction method based on a generic deep embedding network (DEN) framework, which is able to learn a parametric mapping from high-dimensional space to low-dimensional space, guided by a recursive training strategy. DRE makes use of the latent data representations for boosted embedding performance.
+Keywords: Dimensionality Reduction t-SNE UMAP Representation Learning
+Platform: UNKNOWN
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development
+Classifier: Topic :: Scientific/Engineering
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: License :: OSI Approved :: MIT License

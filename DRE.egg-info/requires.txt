@@ -1,0 +1,4 @@
+scikit-learn>=0.16
+numba>=0.34
+torch>=1.0
+cython>=0.10

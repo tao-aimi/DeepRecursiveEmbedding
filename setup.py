@@ -44,7 +44,7 @@ configuration = {
                           'numba >= 0.34',
                           'torch >= 1.0',
                           'cython >= 0.10'],
-    'ext_modules' : cythonize('dre/_utils.pyx'),
+    'ext_modules' : cythonize('dre/_utils_tsne.pyx'),
     'include_dirs' : [numpy.get_include()],
     }
 
