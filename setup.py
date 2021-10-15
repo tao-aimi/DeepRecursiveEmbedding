@@ -12,7 +12,7 @@ def readme():
 os.environ["CC"] = "clang"
 
 configuration = {
-    'name' : 'Deep Recursive Embedding',
+    'name' : 'DRE',
     'version': '1.0.0',
     'description' : 'Deep Recursive Embedding for High-Dimensional Data',
     'long_description' : readme(),
