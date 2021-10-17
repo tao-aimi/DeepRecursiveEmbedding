@@ -13,7 +13,7 @@ os.environ["CC"] = "clang"
 
 configuration = {
     'name' : 'DRE',
-    'version': '1.1.1',
+    'version': '1.1.2',
     'description' : 'Deep Recursive Embedding for High-Dimensional Data',
     'long_description' : readme(),
     'classifiers' : [

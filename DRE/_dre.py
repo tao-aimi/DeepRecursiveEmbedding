@@ -503,7 +503,7 @@ class DeepRecursiveEmbedding:
         self.data = x
         if self.dre_type == 'fc':
             self.data_dim = self.data.shape[1:]
-            if len(data_dim) != 1:
+            if len(self.data_dim) != 1:
                 raise TypeError('[DRE] Input data is not a vector')
         if self.dre_type == 'conv':
             self.data_dim_conv == self.data.shape[1:]
