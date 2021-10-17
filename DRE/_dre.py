@@ -123,17 +123,13 @@ class DeepRecursiveEmbedding:
         # self.start_time = time.time()
         # if not os.path.isdir('checkpoint'):
         # 	os.mkdir('checkpoint')
+
+        # placeholder
         self.net = 0
         self.net_optim = 0
         self.data_dim = 0
         self.data_dim_conv = 0
-
-        # Loss function and optimization method:
-
-        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)  # 5.0*(1e-5) for the original code
-        # self.optimizer = optim.SGD(net.parameters(), lr=1e-4,
-        #                       momentum=0.9, weight_decay=5e-4)
-        # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=1500)
+        self.optimizer = 0
 
     def calculate_p_matrix(self, step):
         # if self.data == 0:
@@ -530,6 +526,13 @@ class DeepRecursiveEmbedding:
         self.net_optim = 0
 
         print('[DRE] Model loaded')
+
+        # Loss function and optimization method:
+
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
+        # self.optimizer = optim.SGD(net.parameters(), lr=1e-4,
+        #                       momentum=0.9, weight_decay=5e-4)
+        # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=1500)
 
         self.num_batch = ceil(self.data.shape[0] / self.batch_size)
 
