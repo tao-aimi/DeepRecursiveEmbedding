@@ -82,8 +82,9 @@ class DeepRecursiveEmbedding:
                  min_dist=0.001,
                  batch_size=2500,
                  rebatching_epochs=1e4,
-                 data_dim=0,
-                 data_dim_conv=[],
+                 save_steps=False,
+                 plot_results=False,
+                 directory='/home/',
                  ):
         self.dre_type = dre_type
         self.learn_from_exist = False
@@ -104,13 +105,14 @@ class DeepRecursiveEmbedding:
         self.lr = learning_rate
 
         self.rolling_num = rebatching_epochs
-        self.data_dim = data_dim
-        self.data_dim_conv = data_dim_conv
 
         self.P = []
         self.data = 0
         self.num_batch = 0
         self.embedding = 0
+        self.save_steps = save_steps
+        self.plot_results = plot_results
+        self.directory = directory
 
         self.loss_plot_train = []
         self.loss_plot_val = []
@@ -119,24 +121,12 @@ class DeepRecursiveEmbedding:
         # self.n = self.num_batch * self.batch_size
 
         # self.start_time = time.time()
-        if not os.path.isdir('checkpoint'):
-        	os.mkdir('checkpoint')
-
-        print('<================ Building model ================>')
-
-        if self.dre_type == 'conv':
-            self.net = DREConvSmall(*self.data_dim_conv)
-        elif self.dre_type == 'fc':
-            self.net = DRE(self.data_dim)
-        else:
-            raise TypeError('[DRE] DRE type must be conv or normal.')
-
-        self.net = self.net.to(self.device)
-        if self.device == 'cuda':
-            self.net = torch.nn.DataParallel(self.net)
-            cudnn.benchmark = True
-
-        print('<================ Model loaded ================>')
+        # if not os.path.isdir('checkpoint'):
+        # 	os.mkdir('checkpoint')
+        self.net = 0
+        self.net_optim = 0
+        self.data_dim = 0
+        self.data_dim_conv = 0
 
         # Loss function and optimization method:
 
@@ -307,15 +297,7 @@ class DeepRecursiveEmbedding:
         # Save checkpoint.
         if float(loss_all / self.num_batch) < self.lowest_loss:
             print('[DRE] Best accuracy, saving the weights...')
-            state = {
-                'net': self.net.state_dict(),
-                'loss': loss.item(),
-                'epoch': epoch,
-            }
-            if not os.path.isdir('checkpoint'):
-                os.mkdir('checkpoint')
-            # Remember to rename the saved model corresponding to the hyper-parameters:
-            torch.save(state, './checkpoint/ckpt_DRE_multi_fresh.pth')
+            self.net_optim = self.net
             lowest_loss = float(loss_all / self.num_batch)
         return loss_all / self.num_batch
 
@@ -341,20 +323,12 @@ class DeepRecursiveEmbedding:
         # Save checkpoint.
         if float(loss_all / self.num_batch) < self.lowest_loss:
             print('[DRE] Best accuracy, saving the weights...')
-            state = {
-                'net': self.net.state_dict(),
-                'loss': loss.item(),
-                'epoch': epoch,
-            }
-            if not os.path.isdir('checkpoint'):
-                os.mkdir('checkpoint')
-            # Remember to rename the saved model corresponding to the hyper-parameters:
-            torch.save(state, './checkpoint/ckpt_DRE_multi_fresh.pth')
+            self.net_optim = self.net
             lowest_loss = float(loss_all / self.num_batch)
         return loss_all / self.num_batch
 
     def plot(self, epoch, step):
-        self._plot(epoch, step)
+        self.embedding = self._plot(epoch, step)
 
     def _plot(self, epoch, step, fig_size='normal'):
         self.net.eval()
@@ -386,9 +360,13 @@ class DeepRecursiveEmbedding:
         plt.tight_layout()
         # plt.scatter(Y[:, 0], Y[:, 1], s=1, c=targets)
         # plt.scatter(Y[:, 0], Y[:, 1], s=1, c=plt.cm.cubehelix(0.1 * targets))
-        plt.savefig("./DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
+        # plt.savefig("./DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
+        if self.plot_results:
+            plt.savefig(self.directory + "DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
         if step == 're_umap':
             return Y
+        else:
+            return 0
 
     def _fit_embedding(self):
         start_time = time.time()
@@ -404,60 +382,69 @@ class DeepRecursiveEmbedding:
                 self.P = self.calculate_p_matrix(recursive_step)
 
             if epoch == self.num_pre_epochs:  # 300
+                if self.save_steps:
                 # save the model:
-                state = {
-                    'net': self.net.state_dict(),
-                    'loss': self.loss_score_train,
-                    'epoch': epoch,
-                }
-                torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
-
-                self.plot(epoch, recursive_step)
+                    state = {
+                        'net': self.net.state_dict(),
+                        'loss': self.loss_score_train,
+                        'epoch': epoch,
+                    }
+                    if not os.path.isdir(self.directory+'DRE_model_checkpoint'):
+                        os.mkdir(self.directory+'DRE_model_checkpoint')
+                    torch.save(state, self.directory+'DRE_model_checkpoint/DRE_{}.pth'.format(recursive_step))
+                if self.plot_results:
+                    self.plot(epoch, recursive_step)
 
                 recursive_step = 're1'
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
             if epoch == self.num_pre_epochs + self.num_recursive_epochs:  # 400
+                if self.save_steps:
                 # save the model:
-                state = {
-                    'net': self.net.state_dict(),
-                    'loss': self.loss_score_train,
-                    'epoch': epoch,
-                }
-                torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
+                    state = {
+                        'net': self.net.state_dict(),
+                        'loss': self.loss_score_train,
+                        'epoch': epoch,
+                    }
+                    torch.save(state, self.directory+'DRE_model_checkpoint/DRE_{}.pth'.format(recursive_step))
 
-                self.plot(epoch, recursive_step)
+                if self.plot_results:
+                    self.plot(epoch, recursive_step)
 
                 recursive_step = 're2'
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
             if epoch == self.num_pre_epochs + 2*self.num_recursive_epochs:  # 500
-                # save the model:
-                state = {
-                    'net': self.net.state_dict(),
-                    'loss': self.loss_score_train,
-                    'epoch': epoch,
-                }
-                torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
-
-                self.plot(epoch, recursive_step)
+                if self.save_steps:
+                    # save the model:
+                    state = {
+                        'net': self.net.state_dict(),
+                        'loss': self.loss_score_train,
+                        'epoch': epoch,
+                    }
+                    torch.save(state, self.directory+'DRE_model_checkpoint/DRE_{}.pth'.format(recursive_step))
+                
+                if self.plot_results:
+                    self.plot(epoch, recursive_step)
 
                 recursive_step = 're3'
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
             if epoch == self.num_pre_epochs + 3*self.num_recursive_epochs:  # 600
-                # save the model:
-                state = {
-                    'net': self.net.state_dict(),
-                    'loss': self.loss_score_train,
-                    'epoch': epoch,
-                }
-                torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
+                if self.save_steps:
+                    # save the model:
+                    state = {
+                        'net': self.net.state_dict(),
+                        'loss': self.loss_score_train,
+                        'epoch': epoch,
+                    }
+                    torch.save(state, self.directory+'DRE_model_checkpoint/DRE_{}.pth'.format(recursive_step))
 
-                self.plot(epoch, recursive_step)
+                if self.plot_results:
+                    self.plot(epoch, recursive_step)
 
                 recursive_step = 're_umap'
                 # calculate the new P matrix:
@@ -488,43 +475,91 @@ class DeepRecursiveEmbedding:
         end_time = time.time()
         duration = end_time - start_time
         print('[DRE] training time: ', duration)
-        state = {
-            'net': self.net.state_dict(),
-            'loss': self.loss_score_train,
-            'epoch': epoch,
-        }
-        torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
+        # state = {
+        #     'net': self.net.state_dict(),
+        #     'loss': self.loss_score_train,
+        #     'epoch': epoch,
+        # }
+        # torch.save(state, './checkpoint/DRE_{}.pth'.format(recursive_step))
 
         print('[DRE] ------->complete.  time: ', time.ctime(time.time()))
 
-        # plot validation loss
-        plt.clf()
-        # plt.style.use(style='Solarize_Light2')
-        plt.plot(self.loss_plot_val, color='b')
-        plt.title('Loss in the iteration (validation). Epochs = %d, Learning rate: %f' % (self.num_epochs, self.lr))
-        plt.xlabel('epochs / 10')
-        plt.ylabel('loss')
-        plt.savefig("./loss_val_{}.png".format(recursive_step))
+        # # plot validation loss
+        # plt.clf()
+        # # plt.style.use(style='Solarize_Light2')
+        # plt.plot(self.loss_plot_val, color='b')
+        # plt.title('Loss in the iteration (validation). Epochs = %d, Learning rate: %f' % (self.num_epochs, self.lr))
+        # plt.xlabel('epochs / 10')
+        # plt.ylabel('loss')
+        # plt.savefig("./loss_val_{}.png".format(recursive_step))
 
-        # plot training loss
-        plt.clf()
-        plt.plot(self.loss_plot_train, color='b')
-        plt.title('Loss in the iteration (training). Epochs = %d, Learning rate: %f' % (self.num_epochs, self.lr))
-        plt.xlabel('epochs')
-        plt.ylabel('loss')
-        plt.savefig("./loss_train_{}.png".format(recursive_step))
+        # # plot training loss
+        # plt.clf()
+        # plt.plot(self.loss_plot_train, color='b')
+        # plt.title('Loss in the iteration (training). Epochs = %d, Learning rate: %f' % (self.num_epochs, self.lr))
+        # plt.xlabel('epochs')
+        # plt.ylabel('loss')
+        # plt.savefig("./loss_train_{}.png".format(recursive_step))
 
         self.plot(epoch, recursive_step)
 
-    def fit_transform(self, x):
-        start_time = time.time()
+    def _fit(self, x):
         self.data = x
+        if self.dre_type == 'fc':
+            self.data_dim = self.data.shape[1:]
+            if len(data_dim) != 1:
+                raise TypeError('[DRE] Input data is not a vector')
+        if self.dre_type == 'conv':
+            self.data_dim_conv == self.data.shape[1:]
+            if len(self.data_dim_conv) != 3:
+                raise TypeError('[DRE] Input data has more than 3 axis, please use the form: [channels, x_pixels, y_pixels]')
+        # Initialize the network:
+        print('[DRE] Building model...')
+
+        if self.dre_type == 'conv':
+            self.net = DREConvSmall(*self.data_dim_conv)
+        elif self.dre_type == 'fc':
+            self.net = DRE(self.data_dim)
+        else:
+            raise TypeError('[DRE] DRE type must be conv or fc.')
+
+        self.net = self.net.to(self.device)
+        if self.device == 'cuda':
+            self.net = torch.nn.DataParallel(self.net)
+            cudnn.benchmark = True
+        self.net_optim = 0
+
+        print('[DRE] Model loaded')
+
         self.num_batch = ceil(self.data.shape[0] / self.batch_size)
+
+        start_time = time.time()
         self._fit_embedding()
         end_time = time.time()
+
         print('fitting time: {}s'.format(end_time - start_time))
 
         return self.embedding
+
+    def fit_transform(self, x):
+        _embedding = self._fit(x)
+        self.embedding = _embedding
+        return self.embedding
+
+    def fit(self, x):
+        self.fit_transform(x)
+        return self
+
+    def save_model(self):
+        state = {
+            'net': self.net_optim.state_dict(),
+            'loss': loss.item(),
+            'epoch': epoch,
+        }
+        if not os.path.isdir(self.directory+'DRE_model_checkpoint'):
+            os.mkdir(self.directory+'DRE_model_checkpoint')
+        # Remember to rename the saved model corresponding to the hyper-parameters:
+        torch.save(state, self.directory+'DRE_model_checkpoint/DRE_manually_save.pth')
 
 
 

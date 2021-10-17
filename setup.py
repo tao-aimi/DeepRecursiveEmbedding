@@ -1,19 +1,19 @@
 import os
 import numpy
-from setuptools import setup
+from setuptools import find_packages, setup
 from numpy.distutils.core import Extension
 from Cython.Build import cythonize
 
 
 def readme():
-    with open('readme.md') as readme_file:
+    with open('README.md') as readme_file:
         return readme_file.read()
 
 os.environ["CC"] = "clang"
 
 configuration = {
     'name' : 'DRE',
-    'version': '1.0.0',
+    'version': '1.1.0',
     'description' : 'Deep Recursive Embedding for High-Dimensional Data',
     'long_description' : readme(),
     'classifiers' : [
@@ -39,12 +39,12 @@ configuration = {
     'author' : 'Xinrui Zu',
     'author_email' : 'zuxinrui95@gmail.com',
     'license' : 'LICENSE',
-    'packages' : ['dre'],
+    'packages' : find_packages(),
+    'setup_requires' : ["cython", "numpy"],
     'install_requires' : ['scikit-learn >= 0.16',
                           'numba >= 0.34',
-                          'torch >= 1.0',
-                          'cython >= 0.10'],
-    'ext_modules' : cythonize('dre/_utils_tsne.pyx'),
+                          'torch >= 1.0',],
+    'ext_modules' : cythonize(['DRE/_utils_tsne.pyx'],),
     'include_dirs' : [numpy.get_include()],
     }
 

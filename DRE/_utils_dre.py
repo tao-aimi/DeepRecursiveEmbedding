@@ -13,7 +13,8 @@ import sklearn
 # from sklearn_xinrui.manifold import _utils
 # import _utils_xinrui
 # import _utils_3900x
-import _utils_tsne
+# mypy error: Module 'DRE' has no attribute '_utils_tsne'
+from . import _utils_tsne  # type: ignore
 # from sklearn_xinrui.manifold import _utils_xinrui_ofast
 from umap_xinrui.umap_ import fuzzy_simplicial_set
 import numba
@@ -180,7 +181,7 @@ def conditional_probability_p(tsne_perplexity, umap_n_neighbors, X, p_type='tsne
     # builtin function from sklearn:
     if p_type == 'tsne':
         D = np.square(D)
-        P = _utils._binary_search_perplexity(D, tsne_perplexity, 1)  # If use ofast, sometimes some elements are nan!
+        P = _utils_tsne._binary_search_perplexity(D, tsne_perplexity, 1)  # If use ofast, sometimes some elements are nan!
         P = P + P.T
         P = P / (2*D.shape[0])
         # sum_P = np.maximum(P.sum(), MACHINE_EPSILON)
