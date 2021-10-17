@@ -15,7 +15,6 @@ import math
 from tqdm import tqdm
 from math import ceil
 import matplotlib.pyplot as plt
-import matplotlib
 
 from ._models import *
 from ._utils_dre import *
@@ -502,11 +501,11 @@ class DeepRecursiveEmbedding:
     def _fit(self, x):
         self.data = x
         if self.dre_type == 'fc':
-            self.data_dim = self.data.shape[1:]
-            if len(self.data_dim) != 1:
+            self.data_dim = self.data.shape[1]
+            if len(self.data.shape) != 2:
                 raise TypeError('[DRE] Input data is not a vector')
         if self.dre_type == 'conv':
-            self.data_dim_conv == self.data.shape[1:]
+            self.data_dim_conv = self.data.shape[1:]
             if len(self.data_dim_conv) != 3:
                 raise TypeError('[DRE] Input data has more than 3 axis, please use the form: [channels, x_pixels, y_pixels]')
         # Initialize the network:
@@ -554,10 +553,12 @@ class DeepRecursiveEmbedding:
         return self
 
     def save_model(self):
+        if self.net == 0:
+            raise TypeError('[DRE] fit the model first')
         state = {
             'net': self.net_optim.state_dict(),
-            'loss': loss.item(),
-            'epoch': epoch,
+            'loss': self.loss_score_val.item(),
+            'epoch': self.num_epochs,
         }
         if not os.path.isdir(self.directory+'DRE_model_checkpoint'):
             os.mkdir(self.directory+'DRE_model_checkpoint')
