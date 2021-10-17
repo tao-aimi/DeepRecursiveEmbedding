@@ -8,6 +8,14 @@ DRE can be installed with a simple PyPi command:
 
 `pip install DRE`
 
+The pre-requests of DRE are:
+
+`numpy >= 1.19`
+`scikit-learn >= 0.16`
+`matplotlib`
+`numba >= 0.34`
+`torch >= 1.0`
+
 ## How to use DRE
 
 DRE follows the form of Scikit-learn APIs, whose `fit_transform` function is for returning the embedding result and `fit` for the whole model:
@@ -18,3 +26,4 @@ from DRE import DeepRecursiveEmbedding
 dre = DeepRecursiveEmbedding()
 y = dre.fit_transform(x)
 ```
+Run `test_MNIST.py` to check the embedding procedure of MNIST dataset.
