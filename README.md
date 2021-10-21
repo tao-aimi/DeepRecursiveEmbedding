@@ -8,6 +8,10 @@ Lab github DRE page:
 Maintainer's github DRE page:
 [Xinrui Zu](https://github.com/zuxinrui/DeepRecursiveEmbedding)
 
+## MNIST embedding result
+
+[MNIST](./image/MNIST.gif)
+
 ## Installation
 
 DRE can be installed with a simple PyPi command:
