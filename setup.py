@@ -1,7 +1,9 @@
 import os
 import numpy
-from setuptools import find_packages, setup
-from numpy.distutils.core import Extension
+from setuptools import find_packages
+from distutils.core import setup
+from distutils.extension import Extension
+# from numpy.distutils.core import Extension
 from Cython.Build import cythonize
 
 
@@ -9,13 +11,23 @@ def readme():
     with open('README.md') as readme_file:
         return readme_file.read()
 
-os.environ["CC"] = "clang"
+
+# os.environ["CC"] = "clang"
+extensions = [
+    Extension(
+        "DRE._utils_tsne",
+        ["DRE/_utils_tsne.pyx"],
+        include_dirs=[numpy.get_include()],
+    ),
+]
+
 
 configuration = {
     'name' : 'DRE',
-    'version': '1.1.3',
+    'version': '1.1.19',
     'description' : 'Deep Recursive Embedding for High-Dimensional Data',
     'long_description' : readme(),
+    'long_description_content_type' : 'text/markdown',
     'classifiers' : [
         'Intended Audience :: Science/Research',
         'Intended Audience :: Developers',
@@ -43,8 +55,10 @@ configuration = {
     'setup_requires' : ["cython", "numpy"],
     'install_requires' : ['scikit-learn >= 0.16',
                           'numba >= 0.34',
-                          'torch >= 1.0',],
-    'ext_modules' : cythonize(['DRE/_utils_tsne.pyx'],),
+                          'torch >= 1.0',
+                          'tqdm',
+                          'ipywidgets'],
+    'ext_modules' : cythonize(extensions),
     'include_dirs' : [numpy.get_include()],
     }
 

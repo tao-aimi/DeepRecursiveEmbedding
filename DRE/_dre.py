@@ -14,6 +14,7 @@ import time
 import math
 from tqdm import tqdm
 from math import ceil
+import matplotlib
 import matplotlib.pyplot as plt
 
 from ._models import *
@@ -72,10 +73,11 @@ class DeepRecursiveEmbedding:
     """
     def __init__(self,
                  n_components=2,
-                 n_pre_epochs=300,
-                 n_recursive_epochs=150,
+                 n_pre_epochs=100,
+                 num_recursive_tsne_epochs=50,
+                 num_recursive_umap_epochs=100,
                  dre_type='fc',  # 'fc' or 'conv'
-                 learning_rate=5.0 * 1e-5,
+                 learning_rate=1e-3,
                  tsne_perplexity=30.0,
                  umap_n_neighbors=15,
                  min_dist=0.001,
@@ -83,7 +85,11 @@ class DeepRecursiveEmbedding:
                  rebatching_epochs=1e4,
                  save_steps=False,
                  plot_results=False,
+                 random_shuffle=True,
+                 debug_mode=False,
                  directory='/home/',
+                 scatter_size=1,
+                 scatter_alpha=0.3,
                  ):
         self.dre_type = dre_type
         self.learn_from_exist = False
@@ -92,8 +98,9 @@ class DeepRecursiveEmbedding:
 
         self.lowest_loss = 10000.0
         self.num_pre_epochs = n_pre_epochs
-        self.num_recursive_epochs = n_recursive_epochs
-        self.num_epochs = self.num_pre_epochs + 4*self.num_recursive_epochs
+        self.num_recursive_tsne_epochs = num_recursive_tsne_epochs
+        self.num_recursive_umap_epochs = num_recursive_umap_epochs
+        self.num_epochs = self.num_pre_epochs + 3*self.num_recursive_tsne_epochs + self.num_recursive_umap_epochs
         self.batch_size = batch_size
 
         self.perplexity = tsne_perplexity
@@ -104,6 +111,7 @@ class DeepRecursiveEmbedding:
         self.lr = learning_rate
 
         self.rolling_num = rebatching_epochs
+        self.plotting_num = 5
 
         self.P = []
         self.data = 0
@@ -129,13 +137,25 @@ class DeepRecursiveEmbedding:
         self.data_dim = 0
         self.data_dim_conv = 0
         self.optimizer = 0
+        self.random_shuffle = random_shuffle
+        self.debug_mode = debug_mode
+        if self.debug_mode:
+            self.labels = 0
+            self.colors = ['darkorange', 'deepskyblue', 'gold', 'lime', 'k', 'darkviolet', 'peru', 'olive',
+                           'midnightblue',
+                           'palevioletred']
+            self.cmap = matplotlib.colors.ListedColormap(self.colors[::-1])
+
+        self.scatter_size = scatter_size
+        self.scatter_alpha = scatter_alpha
 
     def calculate_p_matrix(self, step):
         # if self.data == 0:
         #     raise TypeError('[DRE] Input the data first.')
-        ran_num = np.random.randint(2 ** 16 - 1)
-        np.random.seed(ran_num)
-        np.random.shuffle(self.data)
+        if self.random_shuffle:
+            ran_num = np.random.randint(2 ** 16 - 1)
+            np.random.seed(ran_num)
+            np.random.shuffle(self.data)
         return self._calculate_p_matrix(step)  # fill in 'pre', 're1', 're2', 're3', 're_umap'
 
     def _calculate_p_matrix(self, step):
@@ -349,7 +369,11 @@ class DeepRecursiveEmbedding:
         if fig_size == 'fixed':
             plt.xlim([-500, 500])
             plt.ylim([-500, 500])
-        scatter = plt.scatter(Y[:, 0], Y[:, 1], s=1, c='darkorange', alpha=0.7)
+        if self.debug_mode:
+            scatter = plt.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, cmap=self.cmap, c=self.labels, alpha=self.scatter_alpha)
+            legend1 = plt.legend(*scatter.legend_elements(), title="Classes", loc='upper right')
+        else:
+            scatter = plt.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, c='darkorange', alpha=self.scatter_alpha)
         # legend1 = plt.legend(*scatter.legend_elements(), title="Classes", loc='upper right')
         plt.title('Epoch = %d, Loss = %f' % (epoch, self.loss_score_train))
         plt.tight_layout()
@@ -358,6 +382,7 @@ class DeepRecursiveEmbedding:
         # plt.savefig("./DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
         if self.plot_results:
             plt.savefig(self.directory + "DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
+        plt.close()
         if step == 're_umap':
             return Y
         else:
@@ -371,9 +396,12 @@ class DeepRecursiveEmbedding:
 
             if epoch == 0:
                 self.P = self.calculate_p_matrix(recursive_step)
+                
+            if epoch % self.plotting_num == 0 and epoch != 0 and self.plot_results:
+                self.plot(epoch, recursive_step)
 
             if epoch % self.rolling_num == 0 and epoch != 0 and epoch not in \
-                    np.int16(self.num_pre_epochs + np.int16([0, 1, 2, 3])*self.num_recursive_epochs):
+                    np.int16(self.num_pre_epochs + np.int16([0, 1, 2, 3])*self.num_recursive_tsne_epochs):
                 self.P = self.calculate_p_matrix(recursive_step)
 
             if epoch == self.num_pre_epochs:  # 300
@@ -394,7 +422,7 @@ class DeepRecursiveEmbedding:
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
-            if epoch == self.num_pre_epochs + self.num_recursive_epochs:  # 400
+            if epoch == self.num_pre_epochs + self.num_recursive_tsne_epochs:  # 400
                 if self.save_steps:
                 # save the model:
                     state = {
@@ -411,7 +439,7 @@ class DeepRecursiveEmbedding:
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
-            if epoch == self.num_pre_epochs + 2*self.num_recursive_epochs:  # 500
+            if epoch == self.num_pre_epochs + 2*self.num_recursive_tsne_epochs:  # 500
                 if self.save_steps:
                     # save the model:
                     state = {
@@ -428,7 +456,7 @@ class DeepRecursiveEmbedding:
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 
-            if epoch == self.num_pre_epochs + 3*self.num_recursive_epochs:  # 600
+            if epoch == self.num_pre_epochs + 3*self.num_recursive_tsne_epochs:  # 600
                 if self.save_steps:
                     # save the model:
                     state = {
@@ -528,7 +556,7 @@ class DeepRecursiveEmbedding:
 
         # Loss function and optimization method:
 
-        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-7)
         # self.optimizer = optim.SGD(net.parameters(), lr=1e-4,
         #                       momentum=0.9, weight_decay=5e-4)
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=1500)
@@ -552,14 +580,23 @@ class DeepRecursiveEmbedding:
         self.fit_transform(x)
         return self
 
-    def save_model(self):
+    def save_model(self, save_mode='last_epoch'):
         if self.net == 0:
             raise TypeError('[DRE] fit the model first')
-        state = {
-            'net': self.net_optim.state_dict(),
-            'loss': self.loss_score_val.item(),
-            'epoch': self.num_epochs,
-        }
+        if save_mode == 'last_epoch':
+            state = {
+                'net': self.net.state_dict(),
+                'loss': self.loss_score_val.item(),
+                'epoch': self.num_epochs,
+            }
+        elif save_mode == 'lowest_loss':
+            state = {
+                'net': self.net_optim.state_dict(),
+                'loss': self.lowest_loss.item(),
+                'epoch': self.num_epochs,
+            }
+        else:
+            raise TypeError('[DRE] save_mode invalid')
         if not os.path.isdir(self.directory+'DRE_model_checkpoint'):
             os.mkdir(self.directory+'DRE_model_checkpoint')
         # Remember to rename the saved model corresponding to the hyper-parameters:

@@ -1,0 +1,3 @@
+recursive-include DRE *.pyx
+recursive-include DRE *.pxd
+recursive-include DRE *.pxi
