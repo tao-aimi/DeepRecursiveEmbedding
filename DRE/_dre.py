@@ -580,7 +580,7 @@ class DeepRecursiveEmbedding:
         self.fit_transform(x)
         return self
 
-    def save_model(self, save_mode='last_epoch'):
+    def save_model(self, save_mode='last_epoch', save_dir='./'):
         if self.net == 0:
             raise TypeError('[DRE] fit the model first')
         if save_mode == 'last_epoch':
@@ -597,10 +597,10 @@ class DeepRecursiveEmbedding:
             }
         else:
             raise TypeError('[DRE] save_mode invalid')
-        if not os.path.isdir(self.directory+'DRE_model_checkpoint'):
-            os.mkdir(self.directory+'DRE_model_checkpoint')
+        if not os.path.isdir(save_dir+'DRE_model_checkpoint'):
+            os.mkdir(save_dir+'DRE_model_checkpoint')
         # Remember to rename the saved model corresponding to the hyper-parameters:
-        torch.save(state, self.directory+'DRE_model_checkpoint/DRE_manually_save.pth')
+        torch.save(state, save_dir+'DRE_model_checkpoint/DRE_manually_save.pth')
 
 
 
