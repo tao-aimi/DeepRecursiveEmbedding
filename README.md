@@ -10,7 +10,7 @@ Maintainer's github DRE page:
 
 ## MNIST embedding result
 
-[MNIST](./image/MNIST.gif)
+![gif](./image/MNIST.gif)
 
 ## Installation
 
