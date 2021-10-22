@@ -360,24 +360,53 @@ class DeepRecursiveEmbedding:
                     _, _, _, y_test = self.net(inputs)
                     Y = np.concatenate((Y, y_test.cpu()), axis=0)
         torch.cuda.empty_cache()
-        plt.figure(figsize=(10, 10))
-        if fig_size == 'fixed':
-            plt.xlim([-500, 500])
-            plt.ylim([-500, 500])
-        if self.debug_mode:
-            scatter = plt.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, cmap=self.cmap, c=self.labels, alpha=self.scatter_alpha)
-            legend1 = plt.legend(*scatter.legend_elements(), title="Classes", loc='upper right')
-        else:
-            scatter = plt.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, c='darkorange', alpha=self.scatter_alpha)
-        # legend1 = plt.legend(*scatter.legend_elements(), title="Classes", loc='upper right')
-        plt.title('Epoch = %d, Loss = %f' % (epoch, self.loss_score_train))
-        plt.tight_layout()
-        # plt.scatter(Y[:, 0], Y[:, 1], s=1, c=targets)
-        # plt.scatter(Y[:, 0], Y[:, 1], s=1, c=plt.cm.cubehelix(0.1 * targets))
-        # plt.savefig("./DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
         if self.plot_results:
+            fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+            if fig_size == 'fixed':
+                plt.xlim([-500, 500])
+                plt.ylim([-500, 500])
+            if self.debug_mode:
+                scatter = ax.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, cmap=self.cmap, c=self.labels, alpha=self.scatter_alpha)
+                legend1 = ax.legend(*scatter.legend_elements(), title="Classes", loc='upper right')
+                if step == 'pre':
+                    ax.text(0.03, 0.03, 'Stage 1\nNo recursion',
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            fontsize=30,
+                            transform=ax.transAxes)
+                elif step == 're1':
+                    ax.text(0.03, 0.03, 'Stage 1\nRecursion 1',
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            fontsize=30,
+                            transform=ax.transAxes)
+                elif step == 're2':
+                    ax.text(0.03, 0.03, 'Stage 1\nRecursion 2',
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            fontsize=30,
+                            transform=ax.transAxes)
+                elif step == 're3':
+                    ax.text(0.03, 0.03, 'Stage 1\nRecursion 3',
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            fontsize=30,
+                            transform=ax.transAxes)
+                elif step == 're_umap':
+                    ax.text(0.03, 0.03, 'Stage 2\nRecursion UMAP',
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            fontsize=30,
+                            transform=ax.transAxes)
+            else:
+                scatter = ax.scatter(Y[:, 0], Y[:, 1], s=self.scatter_size, c='darkorange', alpha=self.scatter_alpha)
+            # plt.title('Epoch = %d, Loss = %f' % (epoch, self.loss_score_train))
+            ax.axes.xaxis.set_visible(False)
+            ax.axes.yaxis.set_visible(False)
+            plt.tight_layout()
+            plt.axis('equal')
             plt.savefig(self.directory + "DRE_labeled_%s_%s.png" % (time.asctime(time.localtime(time.time())), step))
-        plt.close()
+            plt.close()
         if step == 're_umap':
             return Y
         else:
@@ -465,6 +494,11 @@ class DeepRecursiveEmbedding:
                     self.plot(epoch, recursive_step)
 
                 recursive_step = 're_umap'
+
+                # adjust the learning tate for convolutional DRE:
+                self.lr = 1e-4
+                self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-7)
+
                 # calculate the new P matrix:
                 self.P = self.calculate_p_matrix(recursive_step)
 

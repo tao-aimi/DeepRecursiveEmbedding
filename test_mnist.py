@@ -14,19 +14,20 @@ from DRE import DeepRecursiveEmbedding
 transform_train = transforms.Compose([
     transforms.ToTensor(),
 ])
-x_train = torchvision.datasets.MNIST(root='./datasets', train=True, transform=transform_train,
+x_train = torchvision.datasets.MNIST(root='./datasets', train=False, transform=transform_train,
                                      download=True)
 x_train_targets = np.int16(x_train.targets)
 x_train = np.array(x_train.data).astype('float32')  # useful for GPU accelerating
-x_train = x_train.reshape(x_train.shape[0], -1)
+# x_train = x_train.reshape(x_train.shape[0], -1)
 
-dre = DeepRecursiveEmbedding(n_pre_epochs=100,
+dre = DeepRecursiveEmbedding(dre_type='conv',
+                             n_pre_epochs=100,
                              num_recursive_tsne_epochs=50,
                              num_recursive_umap_epochs=100,
                              learning_rate=1e-3,
                              batch_size=2500,
                              random_shuffle=False,  # for plotting with labels, set to 'False'
-                             directory='./',
+                             save_directory='./',
                              )
 # dre.labels = x_train_targets
 
