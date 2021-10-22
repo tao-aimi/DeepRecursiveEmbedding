@@ -26,50 +26,43 @@ from ._utils_dre import *
 
 class DeepRecursiveEmbedding:
     """
-    	****** Deep Recursive Embedding implementation (PyTorch). ******
-		Author: Xinrui Zu
-		Version: 1.0
-		Date: 2021/10/10
+    ****** Deep Recursive Embedding implementation (PyTorch). ******
+    Author: Xinrui Zu
+    Version: 1.0.21
+    Date: 2021/10/21
 
-		Original Paper:
-		Authors: Zixia Zhou, Xinrui Zu, Yuanyuan Wang, Boudewijn P.F. Lelieveldt, Qian Tao
+    Original Paper:
+    Authors: Zixia Zhou, Xinrui Zu, Yuanyuan Wang, Boudewijn P.F. Lelieveldt, Qian Tao
 
-        n_components:
-        The embedding dimensionality.
+    n_components:
+    The embedding dimensionality.
 
-        n_pre_epochs:
-        The number of epochs before the recursive steps.
+    n_pre_epochs:
+    The number of epochs before the recursive steps.
 
-        n_recursive_epochs:
-        The number of epochs in each recursive step. (default total steps: 300+100*4)
+    n_recursive_epochs:
+    The number of epochs in each recursive step. (default total steps: 300+100*4)
 
-        dre_type (default 'fc'):
-        The default type of the network. options: ['fc', 'conv']
+    dre_type (default 'fc'):
+    The default type of the network. options: ['fc', 'conv']
 
-        learning_rate:
-        The learning rate of the optimization.
+    learning_rate:
+    The learning rate of the optimization.
 
-        tsne_perplexity (default: 30.0):
-        The parameter defininig the normalization of t-SNE Pij.
+    tsne_perplexity (default: 30.0):
+    The parameter defininig the normalization of t-SNE Pij.
 
-        umap_n_neighbors (default: 15):
-        The number of neighbors when calculating Pij in the last UMAP-like recursive step.
+    umap_n_neighbors (default: 15):
+    The number of neighbors when calculating Pij in the last UMAP-like recursive step.
 
-        min_dist:
-        The minimum distance between the embedding points. Used to form Qij.
+    min_dist:
+    The minimum distance between the embedding points. Used to form Qij.
 
-        batch_size (default: 2500):
-        The batch size of the training procedure.
+    batch_size (default: 2500):
+    The batch size of the training procedure.
 
-        rebatching_epochs:
-		The number of epochs when the minibatches are fixed in the total dataset.
-
-		data_dim:
-		The dimensionality of the input data (when using fully-connected DRE).
-
-		data_dim_conv:
-		The dimensionality of the input tensor (when using convolutional DRE).
-		Example: Fashion-MNIST: [3,32,32]
+    rebatching_epochs:
+    The number of epochs when the minibatches are fixed in the total dataset.
     """
     def __init__(self,
                  n_components=2,
@@ -83,11 +76,11 @@ class DeepRecursiveEmbedding:
                  min_dist=0.001,
                  batch_size=2500,
                  rebatching_epochs=1e4,
-                 save_steps=False,
-                 plot_results=False,
+                 save_step_models=False,
+                 save_plot_results=False,
                  random_shuffle=True,
                  debug_mode=False,
-                 directory='/home/',
+                 save_directory='./',
                  scatter_size=1,
                  scatter_alpha=0.3,
                  ):
@@ -96,7 +89,7 @@ class DeepRecursiveEmbedding:
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        self.lowest_loss = 10000.0
+        self.lowest_loss = np.inf
         self.num_pre_epochs = n_pre_epochs
         self.num_recursive_tsne_epochs = num_recursive_tsne_epochs
         self.num_recursive_umap_epochs = num_recursive_umap_epochs
@@ -117,9 +110,9 @@ class DeepRecursiveEmbedding:
         self.data = 0
         self.num_batch = 0
         self.embedding = 0
-        self.save_steps = save_steps
-        self.plot_results = plot_results
-        self.directory = directory
+        self.save_steps = save_step_models
+        self.plot_results = save_plot_results
+        self.directory = save_directory
 
         self.loss_plot_train = []
         self.loss_plot_val = []
@@ -138,6 +131,8 @@ class DeepRecursiveEmbedding:
         self.data_dim_conv = 0
         self.optimizer = 0
         self.random_shuffle = random_shuffle
+
+        # Debug mode:
         self.debug_mode = debug_mode
         if self.debug_mode:
             self.labels = 0
@@ -165,7 +160,7 @@ class DeepRecursiveEmbedding:
         with torch.no_grad():
             if step == 'pre':
                 for i in range(self.num_batch):
-                    inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
+                    inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32').reshape(self.batch_size, -1)
                     P1 = conditional_probability_p(self.perplexity, self.umap_knn, inputs, p_type='tsne')
                     self.P.append(P1)
                     print('[DRE] P length: ', len(self.P))
@@ -173,14 +168,14 @@ class DeepRecursiveEmbedding:
                 for i in range(self.num_batch):
                     if self.dre_type == 'conv':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
-                        inputs = torch.from_numpy(inputs).permute(0, 3, 1, 2)
+                        inputs = torch.from_numpy(inputs)
                     elif self.dre_type == 'fc':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
                         inputs = torch.from_numpy(inputs)
                     else:
                         raise TypeError('DRE type must be conv or fc.')
                     low_dim_data, _, _, _ = self.net(inputs)
-                    low_dim_data = np.array(low_dim_data.cpu())
+                    low_dim_data = np.array(low_dim_data.cpu()).reshape(self.batch_size, -1)
                     print('[DRE] recursive step 1 data shape: ', low_dim_data.shape)
                     P1 = conditional_probability_p(self.perplexity, self.umap_knn, low_dim_data, p_type='tsne')
                     self.P.append(P1)
@@ -189,14 +184,14 @@ class DeepRecursiveEmbedding:
                 for i in range(self.num_batch):
                     if self.dre_type == 'conv':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
-                        inputs = torch.from_numpy(inputs).permute(0, 3, 1, 2)
+                        inputs = torch.from_numpy(inputs)
                     elif self.dre_type == 'fc':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
                         inputs = torch.from_numpy(inputs)
                     else:
                         raise TypeError('DRE type must be conv or fc.')
                     _, low_dim_data, _, _ = self.net(inputs)
-                    low_dim_data = np.array(low_dim_data.cpu())
+                    low_dim_data = np.array(low_dim_data.cpu()).reshape(self.batch_size, -1)
                     print('[DRE] recursive step 2 data shape: ', low_dim_data.shape)
                     P1 = conditional_probability_p(self.perplexity, self.umap_knn, low_dim_data, p_type='tsne')
                     self.P.append(P1)
@@ -205,14 +200,14 @@ class DeepRecursiveEmbedding:
                 for i in range(self.num_batch):
                     if self.dre_type == 'conv':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
-                        inputs = torch.from_numpy(inputs).permute(0, 3, 1, 2)
+                        inputs = torch.from_numpy(inputs)
                     elif self.dre_type == 'fc':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
                         inputs = torch.from_numpy(inputs)
                     else:
                         raise TypeError('DRE type must be conv or fc.')
                     _, _, low_dim_data, _ = self.net(inputs)
-                    low_dim_data = np.array(low_dim_data.cpu())
+                    low_dim_data = np.array(low_dim_data.cpu()).reshape(self.batch_size, -1)
                     print('[DRE] recursive step 3 data shape: ', low_dim_data.shape)
                     P1 = conditional_probability_p(self.perplexity, self.umap_knn, low_dim_data, p_type='tsne')
                     self.P.append(P1)
@@ -221,14 +216,14 @@ class DeepRecursiveEmbedding:
                 for i in range(self.num_batch):
                     if self.dre_type == 'conv':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
-                        inputs = torch.from_numpy(inputs).permute(0, 3, 1, 2)
+                        inputs = torch.from_numpy(inputs)
                     elif self.dre_type == 'fc':
                         inputs = self.data[i * self.batch_size:(i + 1) * self.batch_size].astype('float32')
                         inputs = torch.from_numpy(inputs)
                     else:
                         raise TypeError('DRE type must be conv or fc.')
                     _, _, low_dim_data, _ = self.net(inputs)
-                    low_dim_data = np.array(low_dim_data.cpu())
+                    low_dim_data = np.array(low_dim_data.cpu()).reshape(self.batch_size, -1)
                     print('[DRE] recursive step 3 data shape: ', low_dim_data.shape)
                     P1 = conditional_probability_p(self.perplexity, self.umap_knn, low_dim_data, p_type='umap')
                     self.P.append(P1)
@@ -237,7 +232,7 @@ class DeepRecursiveEmbedding:
         return self.P
 
     def _train(self, epoch, step):
-        print('\nEpoch: %d' % epoch)
+        # print('\nEpoch: %d' % epoch)
         self.net.train()  # train mode
         loss_all = 0
         with tqdm(total=self.data.shape[0], desc=f'[DRE] Training.. Epoch {epoch + 1}/{self.num_epochs}', unit='img', colour='blue') as pbar:
@@ -265,7 +260,7 @@ class DeepRecursiveEmbedding:
         return loss_all / self.num_batch
 
     def _train_conv(self, epoch, step):
-        print('\nEpoch: %d' % epoch)
+        # print('\nEpoch: %d' % epoch)
         self.net.train()  # train mode
         loss_all = 0
         with tqdm(total=self.data.shape[0], desc=f'[DRE] Training.. Epoch {epoch + 1}/{self.num_epochs}', unit='img', colour='blue') as pbar:
@@ -273,7 +268,7 @@ class DeepRecursiveEmbedding:
                 # Load the packed data:
                 tar = self.P[i]
                 inputs, targets = torch.from_numpy(self.data[i*self.batch_size:(i+1)*self.batch_size])\
-                                      .type(torch.FloatTensor).permute(0, 3, 1, 2).to(self.device),\
+                                      .type(torch.FloatTensor).to(self.device),\
                                   torch.from_numpy(tar).type(torch.FloatTensor).to(self.device)  # 如果是long会全变成0
                 self.optimizer.zero_grad()
                 _, _, _, outputs = self.net(inputs)
@@ -326,7 +321,7 @@ class DeepRecursiveEmbedding:
                     # Load the packed data:
                     tar = self.P[i]
                     inputs, targets = torch.from_numpy(self.data[i*self.batch_size:(i+1)*self.batch_size])\
-                                          .type(torch.FloatTensor).permute(0, 3, 1, 2).to(self.device), \
+                                          .type(torch.FloatTensor).to(self.device), \
                                       torch.from_numpy(tar).type(torch.FloatTensor).to(self.device)  # 如果是long会全变成0
                     _, _, _, outputs = self.net(inputs)
                     # loss = kl_divergence_bayes(outputs, targets, 1, knn_bayes)
@@ -580,7 +575,7 @@ class DeepRecursiveEmbedding:
         self.fit_transform(x)
         return self
 
-    def save_model(self, save_mode='last_epoch', save_dir='./'):
+    def save_model(self, save_mode='last_epoch', save_dir='./', model_name='DRE_manually_save'):
         if self.net == 0:
             raise TypeError('[DRE] fit the model first')
         if save_mode == 'last_epoch':
@@ -600,7 +595,7 @@ class DeepRecursiveEmbedding:
         if not os.path.isdir(save_dir+'DRE_model_checkpoint'):
             os.mkdir(save_dir+'DRE_model_checkpoint')
         # Remember to rename the saved model corresponding to the hyper-parameters:
-        torch.save(state, save_dir+'DRE_model_checkpoint/DRE_manually_save.pth')
+        torch.save(state, save_dir+'DRE_model_checkpoint/{}.pth'.format(model_name))
 
 
 

@@ -24,7 +24,7 @@ extensions = [
 
 configuration = {
     'name' : 'DRE',
-    'version': '1.1.19',
+    'version': '1.1.23',
     'description' : 'Deep Recursive Embedding for High-Dimensional Data',
     'long_description' : readme(),
     'long_description_content_type' : 'text/markdown',
