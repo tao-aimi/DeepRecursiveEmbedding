@@ -28,14 +28,17 @@ The pre-requests of DRE are:
 
 ## How to use DRE
 
-DRE follows the form of Scikit-learn APIs, whose `fit_transform` function is for returning the embedding result and `fit` for the whole model:
+DRE follows the form of `Scikit-learn` APIs, whose `fit_transform` function is for returning the embedding result and `fit` for the whole model:
 
 ```python
 from DRE import DeepRecursiveEmbedding
 
 dre = DeepRecursiveEmbedding()
+# return the embedding result:
 y = dre.fit_transform(x)
+# or return the whole model:
+dre.fit(x)
 ```
-Run `test_MNIST.py` to check the embedding procedure of MNIST dataset.
+Copy and run `test_mnist.py` or `test_mnist.ipynb` to check the embedding procedure of MNIST dataset.
 
 ## 
