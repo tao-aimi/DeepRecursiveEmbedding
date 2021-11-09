@@ -78,6 +78,7 @@ class DeepRecursiveEmbedding:
                  rebatching_epochs=1e4,
                  save_step_models=False,
                  save_plot_results=False,
+                 plot_init=False,
                  random_shuffle=True,
                  debug_mode=False,
                  save_directory='./',
@@ -112,6 +113,7 @@ class DeepRecursiveEmbedding:
         self.embedding = 0
         self.save_steps = save_step_models
         self.plot_results = save_plot_results
+        self.plot_init = plot_init
         self.directory = save_directory
 
         self.loss_plot_train = []
@@ -420,6 +422,9 @@ class DeepRecursiveEmbedding:
 
             if epoch == 0:
                 self.P = self.calculate_p_matrix(recursive_step)
+
+            if self.plot_results and self.plot_init and epoch < 5:  # plot embedding results in the first steps
+                self.plot(epoch, recursive_step)
                 
             if epoch % self.plotting_num == 0 and epoch != 0 and self.plot_results:
                 self.plot(epoch, recursive_step)
@@ -430,7 +435,7 @@ class DeepRecursiveEmbedding:
 
             if epoch == self.num_pre_epochs:  # 300
                 if self.save_steps:
-                # save the model:
+                    # save the model:
                     state = {
                         'net': self.net.state_dict(),
                         'loss': self.loss_score_train,
@@ -448,7 +453,7 @@ class DeepRecursiveEmbedding:
 
             if epoch == self.num_pre_epochs + self.num_recursive_tsne_epochs:  # 400
                 if self.save_steps:
-                # save the model:
+                    # save the model:
                     state = {
                         'net': self.net.state_dict(),
                         'loss': self.loss_score_train,

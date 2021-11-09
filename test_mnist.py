@@ -14,11 +14,13 @@ from DRE import DeepRecursiveEmbedding
 transform_train = transforms.Compose([
     transforms.ToTensor(),
 ])
-x_train = torchvision.datasets.MNIST(root='./datasets', train=False, transform=transform_train,
+x_train = torchvision.datasets.MNIST(root='./datasets', train=True, transform=transform_train,
                                      download=True)
 x_train_targets = np.int16(x_train.targets)
 x_train = np.array(x_train.data).astype('float32')  # useful for GPU accelerating
-# x_train = x_train.reshape(x_train.shape[0], -1)
+
+# x_train = x_train.reshape(x_train.shape[0], -1)  # fc
+x_train = np.expand_dims(x_train, axis=1)  # conv
 
 dre = DeepRecursiveEmbedding(dre_type='conv',
                              n_pre_epochs=100,
@@ -27,10 +29,12 @@ dre = DeepRecursiveEmbedding(dre_type='conv',
                              learning_rate=1e-3,
                              batch_size=2500,
                              random_shuffle=False,  # for plotting with labels, set to 'False'
+                             save_plot_results=True,
+                             plot_init=True,
                              save_directory='./',
+                             debug_mode=True,
                              )
-# dre.labels = x_train_targets
-
+dre.labels = x_train_targets  # debug mode
 y = dre.fit_transform(x_train)
 
 # Plot the result:
