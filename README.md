@@ -46,12 +46,19 @@ Z. Zhou, X. Zu, Y. Wang, B. P. F. Lelieveldt and Q. Tao, "Deep Recursive Embeddi
 
 @ARTICLE{DRE2022,
   author={Zhou, Zixia and Zu, Xinrui and Wang, Yuanyuan and Lelieveldt, Boudewijn P. F. and Tao, Qian},
+  
   journal={IEEE Transactions on Visualization and Computer Graphics}, 
+  
   title={Deep Recursive Embedding for High-Dimensional Data}, 
+  
   year={2022},
+  
   volume={28},
+  
   number={2},
+  
   pages={1237-1248},
+  
   doi={10.1109/TVCG.2021.3122388}
   }
 
