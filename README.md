@@ -44,7 +44,7 @@ Copy and run `test_mnist.py` or `test_mnist.ipynb` to check the embedding proced
 ## Citation
 Z. Zhou, X. Zu, Y. Wang, B. P. F. Lelieveldt and Q. Tao, "Deep Recursive Embedding for High-Dimensional Data," in IEEE Transactions on Visualization and Computer Graphics, vol. 28, no. 2, pp. 1237-1248, 1 Feb. 2022, doi: 10.1109/TVCG.2021.3122388.
 
-@ARTICLE{DRE2022,
+@ARTICLE{DRE2022,  
   author={Zhou, Zixia and Zu, Xinrui and Wang, Yuanyuan and Lelieveldt, Boudewijn P. F. and Tao, Qian},  
   journal={IEEE Transactions on Visualization and Computer Graphics},   
   title={Deep Recursive Embedding for High-Dimensional Data},   
